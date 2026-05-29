@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>IT Job Market Intelligence</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f4f0;color:#1a1a18;font-size:14px}
+:root{--bg:#f5f4f0;--card:#fff;--border:#e0ded6;--text:#1a1a18;--muted:#73726c;--accent:#5B5EA6;--green:#1D9E75;--red:#D85A30;--blue:#378ADD;--amber:#BA7517}
+.wrap{max-width:920px;margin:0 auto;padding:20px 16px}
+.header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.hicon{width:36px;height:36px;border-radius:9px;background:#e8e7f8;display:flex;align-items:center;justify-content:center}
+.htitle{font-size:18px;font-weight:500}
+.hsub{font-size:12px;color:var(--muted);margin-top:2px}
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:20px;overflow-x:auto}
+.tab{padding:8px 14px;font-size:13px;border:none;background:none;color:var(--muted);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .15s}
+.tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.tab-content{display:none}.tab-content.active{display:block}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.metric{background:var(--card);border-radius:10px;padding:14px 16px;border:0.5px solid var(--border)}
+.metric-label{font-size:11px;color:var(--muted);margin-bottom:4px}
+.metric-val{font-size:22px;font-weight:500}
+.metric-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.card{background:var(--card);border:0.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:500;margin-bottom:12px}
+.card-sub{font-size:11px;color:var(--muted);margin-top:-8px;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.chart-wrap{position:relative;width:100%}
+.filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.filter-btn{padding:5px 14px;font-size:12px;border-radius:20px;border:0.5px solid var(--border);background:#f5f4f0;color:var(--muted);cursor:pointer;transition:all .15s}
+.filter-btn.active{background:#eeedf8;color:var(--accent);border-color:#b0aed8}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bar-label{width:95px;font-size:11px;color:var(--muted);flex-shrink:0;text-align:right}
+.bar-track{flex:1;height:10px;background:#f0efe8;border-radius:5px;overflow:hidden}
+.bar-fill{height:100%;border-radius:5px;transition:width .5s}
+.bar-val{width:36px;font-size:11px;font-weight:500;text-align:right}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;color:var(--muted);font-weight:500;text-align:left;padding:8px 12px;border-bottom:0.5px solid var(--border)}
+td{font-size:13px;padding:11px 12px;border-bottom:0.5px solid var(--border)}
+tr:last-child td{border-bottom:none}
+.badge{font-size:11px;padding:2px 8px;border-radius:4px;font-weight:500;display:inline-block}
+.badge-high{background:#d4f5ea;color:#0d6e50}
+.badge-med{background:#fdf0d0;color:#8a5a00}
+.badge-low{background:#fce8e0;color:#a03010}
+.domain-tag{font-size:11px;padding:2px 8px;border-radius:4px;background:#f0efe8;color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+/* AI Chat */
+.chat-wrap{display:flex;flex-direction:column;height:420px}
+.chat-msgs{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:10px;padding-bottom:10px}
+.msg{max-width:80%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6}
+.msg-ai{background:#f0efe8;color:var(--text);border-radius:14px 14px 14px 4px;align-self:flex-start}
+.msg-user{background:#eeedf8;color:#3a3880;border-radius:14px 14px 4px 14px;align-self:flex-end}
+.chat-input-row{display:flex;gap:8px;padding-top:12px;border-top:0.5px solid var(--border)}
+.chat-input{flex:1;padding:9px 12px;border:0.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--card);color:var(--text);outline:none}
+.chat-input:focus{border-color:#9998d8}
+.send-btn{padding:9px 18px;font-size:13px;background:#5B5EA6;color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:inherit;transition:opacity .15s}
+.send-btn:disabled{opacity:.5;cursor:default}
+.typing{display:flex;gap:4px;align-self:flex-start;padding:8px 12px}
+.dot{width:7px;height:7px;border-radius:50%;background:#9998d8;animation:bounce .9s infinite}
+.dot:nth-child(2){animation-delay:.2s}.dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.suggest-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{font-size:12px;padding:6px 12px;border-radius:20px;background:var(--card);border:0.5px solid var(--border);color:var(--muted);cursor:pointer;transition:background .15s}
+.chip:hover{background:#f0efe8}
+@media(max-width:600px){.metrics{grid-template-columns:1fr 1fr}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <div class="hicon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#5B5EA6" stroke-width="1.8" stroke-linecap="round"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg>
+    </div>
+    <div>
+      <div class="htitle">IT Job Market Intelligence</div>
+      <div class="hsub">India · Updated May 2025 · 280K+ postings analysed</div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('overview',this)">Overview</button>
+    <button class="tab" onclick="showTab('skills',this)">Skills</button>
+    <button class="tab" onclick="showTab('salaries',this)">Salaries</button>
+    <button class="tab" onclick="showTab('cities',this)">Cities</button>
+    <button class="tab" onclick="showTab('companies',this)">Companies</button>
+    <button class="tab" onclick="showTab('advisor',this)">AI Advisor</button>
+  </div>
+
+  <!-- OVERVIEW -->
+  <div id="tab-overview" class="tab-content active">
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Active Job Postings</div><div class="metric-val" style="color:var(--green)">2.8L+</div><div class="metric-sub">↑ 24% YoY</div></div>
+      <div class="metric"><div class="metric-label">Avg. Fresher Salary</div><div class="metric-val">₹6.2L</div><div class="metric-sub">per annum</div></div>
+      <div class="metric"><div class="metric-label">Top City</div><div class="metric-val">Bengaluru</div><div class="metric-sub">42,000 openings</div></div>
+      <div class="metric"><div class="metric-label">Fastest Growing Skill</div><div class="metric-val" style="color:var(--accent)">AI/ML</div><div class="metric-sub">↑ 35% YoY</div></div>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">Hiring trend (monthly postings)</div>
+        <div class="chart-wrap" style="height:170px"><canvas id="trendChart" role="img" aria-label="Line chart of monthly IT job postings from Jun 2024 to Jun 2025, showing growth from 58K to 88K">Monthly postings rising from 58K in Jun 2024 to 88K in Jun 2025.</canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Demand by domain</div>
+        <div class="chart-wrap" style="height:140px"><canvas id="domainChart" role="img" aria-label="Donut chart of IT job demand by domain">Cloud & Infra 26%, AI/ML 22%, Web Dev 18%, DevOps 14%, Cybersecurity 11%, Data Eng 9%.</canvas></div>
+        <div class="legend" id="domainLegend"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Skill requirement radar — by role</div>
+      <div class="chart-wrap" style="height:260px"><canvas id="radarChart" role="img" aria-label="Radar chart comparing skill requirements across SDE, Data Scientist, DevOps, and Cloud Architect roles">Radar comparing Python, Cloud, Coding, Security, Data, and DevOps skills across four IT roles.</canvas></div>
+    </div>
+  </div>
+
+  <!-- SKILLS -->
+  <div id="tab-skills" class="tab-content">
+    <div class="filters" id="skillFilters">
+      <button class="filter-btn active" onclick="filterSkills('All',this)">All</button>
+      <button class="filter-btn" onclick="filterSkills('AI',this)">AI</button>
+      <button class="filter-btn" onclick="filterSkills('Cloud',this)">Cloud</button>
+      <button class="filter-btn" onclick="filterSkills('Web',this)">Web</button>
+      <button class="filter-btn" onclick="filterSkills('Security',this)">Security</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Demand score (% of job postings mentioning this skill)</div>
+      <div class="chart-wrap" id="skillDemandWrap" style="height:340px"><canvas id="skillDemandChart" role="img" aria-label="Horizontal bar chart of skill demand scores">Skill demand scores from Python at 92% to SQL at 55%.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">YoY growth in job demand (%)</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="skillGrowthChart" role="img" aria-label="Bar chart of year-over-year skill demand growth">AI/ML leads YoY growth at 35%, followed by Cybersecurity at 30%.</canvas></div>
+    </div>
+  </div>
+
+  <!-- SALARIES -->
+  <div id="tab-salaries" class="tab-content">
+    <div class="filters">
+      <button class="filter-btn active" onclick="filterSalary('all',this)">All levels</button>
+      <button class="filter-btn" onclick="filterSalary('fresher',this)">Fresher (0-2 yr)</button>
+      <button class="filter-btn" onclick="filterSalary('mid',this)">Mid (3-6 yr)</button>
+      <button class="filter-btn" onclick="filterSalary('senior',this)">Senior (7+ yr)</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Annual salary by role (₹ LPA)</div>
+      <div class="card-sub">Indian market median, 2025</div>
+      <div class="chart-wrap" style="height:300px"><canvas id="salaryChart" role="img" aria-label="Grouped horizontal bar chart of IT salaries by role and experience">Salaries range from ₹5L for fresher Full Stack to ₹42L for senior Cloud Architect.</canvas></div>
+      <div class="legend" style="margin-top:12px">
+        <span class="legend-item"><span class="legend-dot" style="background:#9FE1CB"></span>Fresher</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#5B5EA6"></span>Mid-level</span>
+        <span class="legend-item"><span class="legend-dot" style="background:#1D9E75"></span>Senior</span>
+      </div>
+    </div>
+    <div class="metrics">
+      <div class="metric"><div class="metric-label">Highest paying role</div><div class="metric-val" style="font-size:15px;color:var(--green)">Cloud Architect</div><div class="metric-sub">₹42L senior median</div></div>
+      <div class="metric"><div class="metric-label">Best fresher entry</div><div class="metric-val" style="font-size:15px;color:var(--accent)">AI/ML Engineer</div><div class="metric-sub">₹8L avg starting</div></div>
+      <div class="metric"><div class="metric-label">Fastest salary growth</div><div class="metric-val" style="font-size:15px;color:var(--red)">Cybersecurity</div><div class="metric-sub">↑ 30% YoY demand</div></div>
+    </div>
+  </div>
+
+  <!-- CITIES -->
+  <div id="tab-cities" class="tab-content">
+    <div class="card">
+      <div class="card-title">Job openings by city</div>
+      <div class="chart-wrap" style="height:240px"><canvas id="cityChart" role="img" aria-label="Bar chart of IT job openings across Indian cities">Bengaluru leads with 42,000 openings, followed by Hyderabad at 28,000.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">YoY hiring growth by city (%)</div>
+      <div id="cityBars"></div>
+    </div>
+  </div>
+
+  <!-- COMPANIES -->
+  <div id="tab-companies" class="tab-content">
+    <div class="card" style="padding:0;overflow:hidden">
+      <table>
+        <thead><tr><th>Company</th><th style="text-align:right">Openings</th><th style="text-align:center">Domain</th><th style="text-align:center">Fresher</th></tr></thead>
+        <tbody id="companiesBody"></tbody>
+      </table>
+    </div>
+    <div class="metrics" style="margin-top:14px">
+      <div class="metric"><div class="metric-label">Top IT Services</div><div class="metric-val" style="font-size:15px">TCS</div><div class="metric-sub">12,400 openings</div></div>
+      <div class="metric"><div class="metric-label">Top Tech Giant</div><div class="metric-val" style="font-size:15px">Amazon India</div><div class="metric-sub">4,100 openings</div></div>
+      <div class="metric"><div class="metric-label">Best for freshers</div><div class="metric-val" style="font-size:13px;color:var(--green)">TCS / Infosys</div><div class="metric-sub">Mass hiring programs</div></div>
+    </div>
+  </div>
+
+  <!-- AI ADVISOR -->
+  <div id="tab-advisor" class="tab-content">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:0.5px solid var(--border);margin-bottom:14px">
+        <div style="width:30px;height:30px;border-radius:8px;background:#eeedf8;display:flex;align-items:center;justify-content:center">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5B5EA6" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+        </div>
+        <div>
+          <div style="font-size:13px;font-weight:500">AI Career Advisor</div>
+          <div style="font-size:11px;color:var(--muted)">Powered by Claude · Indian IT market expertise</div>
+        </div>
+      </div>
+      <div class="chat-wrap">
+        <div class="chat-msgs" id="chatMsgs">
+          <div class="msg msg-ai">Hi! I'm your AI career advisor powered by Claude. Tell me your current skills, experience level, or career goal — I'll give you personalised guidance on the Indian IT job market.</div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chatInput" placeholder="e.g. I know Python and want to move into AI/ML…" onkeydown="if(event.key==='Enter')sendChat()"/>
+          <button class="send-btn" id="sendBtn" onclick="sendChat()">Send ↗</button>
+        </div>
+      </div>
+    </div>
+    <div class="suggest-chips">
+      <div class="chip" onclick="useChip(this)">I'm a fresher in CS, what role should I target?</div>
+      <div class="chip" onclick="useChip(this)">How do I move from Java dev to Cloud Architect?</div>
+      <div class="chip" onclick="useChip(this)">Best cities for AI/ML jobs in India?</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- DATA ----
+const skillsData=[
+  {skill:"Python",demand:92,yoy:18,cats:["AI","Web"]},
+  {skill:"Cloud (AWS/Azure/GCP)",demand:88,yoy:22,cats:["Cloud"]},
+  {skill:"React/Node.js",demand:81,yoy:14,cats:["Web"]},
+  {skill:"AI/ML",demand:79,yoy:35,cats:["AI"]},
+  {skill:"DevOps/CI-CD",demand:74,yoy:20,cats:["Cloud"]},
+  {skill:"Kubernetes",demand:68,yoy:28,cats:["Cloud"]},
+  {skill:"Data Engineering",demand:65,yoy:25,cats:["AI"]},
+  {skill:"Cybersecurity",demand:61,yoy:30,cats:["Security"]},
+  {skill:"Java",demand:58,yoy:4,cats:["Web"]},
+  {skill:"SQL",demand:55,yoy:6,cats:["AI","Web"]},
+];
+const salaryData=[
+  {role:"AI/ML Engineer",fresher:8,mid:18,senior:38},
+  {role:"Cloud Architect",fresher:7,mid:20,senior:42},
+  {role:"Data Scientist",fresher:7,mid:16,senior:35},
+  {role:"DevOps Engineer",fresher:6,mid:15,senior:32},
+  {role:"Full Stack Dev",fresher:5,mid:13,senior:28},
+  {role:"Cybersecurity",fresher:6,mid:14,senior:30},
+  {role:"Backend Eng.",fresher:5,mid:12,senior:26},
+];
+const cityData=[
+  {city:"Bengaluru",jobs:42000,growth:18},
+  {city:"Hyderabad",jobs:28000,growth:22},
+  {city:"Pune",jobs:21000,growth:15},
+  {city:"NCR Delhi",jobs:19500,growth:12},
+  {city:"Mumbai",jobs:17000,growth:10},
+  {city:"Chennai",jobs:14000,growth:14},
+  {city:"Kolkata",jobs:6500,growth:20},
+  {city:"Ahmedabad",jobs:5200,growth:25},
+];
+const companies=[
+  {name:"TCS",openings:12400,domain:"IT Services",fresher:"High"},
+  {name:"Infosys",openings:10800,domain:"IT Services",fresher:"High"},
+  {name:"Wipro",openings:8700,domain:"IT Services",fresher:"High"},
+  {name:"Amazon India",openings:4100,domain:"Cloud / E-Comm",fresher:"Med"},
+  {name:"Google India",openings:3200,domain:"Cloud / AI",fresher:"Med"},
+  {name:"Microsoft India",openings:2900,domain:"Cloud / AI",fresher:"Med"},
+  {name:"Zomato",openings:980,domain:"Consumer Tech",fresher:"High"},
+  {name:"Freshworks",openings:850,domain:"SaaS",fresher:"Med"},
+  {name:"Razorpay",openings:720,domain:"FinTech",fresher:"Low"},
+  {name:"Flipkart",openings:1900,domain:"E-Commerce",fresher:"Med"},
+];
+const domainShare=[
+  {name:"Cloud & Infra",value:26,color:"#5B5EA6"},
+  {name:"AI / ML",value:22,color:"#1D9E75"},
+  {name:"Web Dev",value:18,color:"#378ADD"},
+  {name:"DevOps",value:14,color:"#D85A30"},
+  {name:"Cybersecurity",value:11,color:"#BA7517"},
+  {name:"Data Eng.",value:9,color:"#D4537E"},
+];
+
+// ---- TABS ----
+function showTab(id,btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='skills') renderSkillCharts('All');
+  if(id==='salaries') renderSalaryChart('all');
+  if(id==='cities') renderCityCharts();
+}
+
+// ---- CHART INSTANCES ----
+let charts={};
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+// ---- OVERVIEW CHARTS ----
+window.addEventListener('load',()=>{
+  // Trend line
+  destroyChart('trend');
+  charts.trend=new Chart(document.getElementById('trendChart'),{
+    type:'line',
+    data:{
+      labels:["Jun'24","Aug'24","Oct'24","Dec'24","Feb'25","Apr'25","Jun'25"],
+      datasets:[{label:'Postings',data:[58000,63000,67000,61000,72000,79000,88000],borderColor:'#5B5EA6',backgroundColor:'rgba(91,94,166,0.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#5B5EA6',fill:true,tension:0.3}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>(c.raw/1000).toFixed(0)+'k postings'}}},scales:{x:{ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{font:{size:10},callback:v=>(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,0.04)'}}}}
+  });
+
+  // Domain donut
+  destroyChart('domain');
+  charts.domain=new Chart(document.getElementById('domainChart'),{
+    type:'doughnut',
+    data:{labels:domainShare.map(d=>d.name),datasets:[{data:domainShare.map(d=>d.value),backgroundColor:domainShare.map(d=>d.color),borderWidth:2,borderColor:'#fff',hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.label+': '+c.raw+'%'}}}}
+  });
+  const leg=document.getElementById('domainLegend');
+  domainShare.forEach(d=>{
+    leg.innerHTML+=`<span class="legend-item"><span class="legend-dot" style="background:${d.color}"></span>${d.name} ${d.value}%</span>`;
+  });
+
+  // Radar
+  destroyChart('radar');
+  charts.radar=new Chart(document.getElementById('radarChart'),{
+    type:'radar',
+    data:{
+      labels:['AI/ML','Cloud','Coding','Security','Data','DevOps'],
+      datasets:[
+        {label:'SDE',data:[65,60,95,50,55,60],borderColor:'#5B5EA6',backgroundColor:'rgba(91,94,166,0.1)',borderWidth:1.5,pointRadius:3},
+        {label:'Data Sci',data:[92,55,75,45,90,40],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.1)',borderWidth:1.5,pointRadius:3},
+        {label:'DevOps',data:[45,90,70,75,55,95],borderColor:'#D85A30',backgroundColor:'rgba(216,90,48,0.1)',borderWidth:1.5,pointRadius:3},
+        {label:'Cloud Arch',data:[70,95,65,80,60,75],borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.1)',borderWidth:1.5,pointRadius:3},
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:10,padding:12}}},scales:{r:{ticks:{font:{size:9},stepSize:20},grid:{color:'rgba(0,0,0,0.06)'},pointLabels:{font:{size:11}}}}}
+  });
+
+  // Companies table
+  const tbody=document.getElementById('companiesBody');
+  companies.forEach(c=>{
+    const bc=c.fresher==='High'?'badge-high':c.fresher==='Med'?'badge-med':'badge-low';
+    tbody.innerHTML+=`<tr><td style="font-weight:500">${c.name}</td><td style="text-align:right;color:#73726c">${c.openings.toLocaleString()}</td><td style="text-align:center"><span class="domain-tag">${c.domain}</span></td><td style="text-align:center"><span class="badge ${bc}">${c.fresher}</span></td></tr>`;
+  });
+});
+
+// ---- SKILLS CHARTS ----
+let currentSkillFilter='All';
+function filterSkills(cat,btn){
+  document.querySelectorAll('#skillFilters .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentSkillFilter=cat;
+  renderSkillCharts(cat);
+}
+function renderSkillCharts(cat){
+  const filtered=skillsData.filter(s=>cat==='All'||s.cats.includes(cat));
+  const h=Math.max(filtered.length*42+60,160);
+  document.getElementById('skillDemandWrap').style.height=h+'px';
+
+  destroyChart('skillDemand');
+  charts.skillDemand=new Chart(document.getElementById('skillDemandChart'),{
+    type:'bar',
+    data:{labels:filtered.map(s=>s.skill),datasets:[{label:'Demand %',data:filtered.map(s=>s.demand),backgroundColor:'#5B5EA6',borderRadius:4,barThickness:14}]},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw+'% of job postings'}}}},scales:{x:{max:100,ticks:{font:{size:10},callback:function(v){return v+'%'}},grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{font:{size:11}},grid:{display:false}}}}
+  });
+
+  destroyChart('skillGrowth');
+  charts.skillGrowth=new Chart(document.getElementById('skillGrowthChart'),{
+    type:'bar',
+    data:{labels:filtered.map(s=>s.skill),datasets:[{label:'YoY Growth %',data:filtered.map(s=>s.yoy),backgroundColor:'#1D9E75',borderRadius:{topLeft:4,topRight:4},barThickness:22}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return '+'+c.raw+'% YoY'}}}},scales:{x:{ticks:{font:{size:10},maxRotation:30},grid:{display:false}},y:{ticks:{font:{size:10},callback:function(v){return v+'%'}},grid:{color:'rgba(0,0,0,0.04)'}}}}
+  });
+}
+
+// ---- SALARY CHART ----
+let salaryFilter='all';
+function filterSalary(lvl,btn){
+  document.querySelectorAll('#tab-salaries .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  salaryFilter=lvl;
+  renderSalaryChart(lvl);
+}
+function renderSalaryChart(lvl){
+  const ds=[];
+  if(lvl==='all'||lvl==='fresher') ds.push({label:'Fresher',data:salaryData.map(s=>s.fresher),backgroundColor:'#9FE1CB',borderRadius:{topLeft:0,topRight:4,bottomRight:4,bottomLeft:0},barThickness:10});
+  if(lvl==='all'||lvl==='mid') ds.push({label:'Mid-level',data:salaryData.map(s=>s.mid),backgroundColor:'#5B5EA6',borderRadius:{topLeft:0,topRight:4,bottomRight:4,bottomLeft:0},barThickness:10});
+  if(lvl==='all'||lvl==='senior') ds.push({label:'Senior',data:salaryData.map(s=>s.senior),backgroundColor:'#1D9E75',borderRadius:{topLeft:0,topRight:4,bottomRight:4,bottomLeft:0},barThickness:10});
+
+  destroyChart('salary');
+  charts.salary=new Chart(document.getElementById('salaryChart'),{
+    type:'bar',
+    data:{labels:salaryData.map(s=>s.role),datasets:ds},
+    options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return '₹'+c.raw+' LPA'}}}},scales:{x:{ticks:{font:{size:10},callback:function(v){return '₹'+v+'L'}},grid:{color:'rgba(0,0,0,0.04)'}},y:{ticks:{font:{size:11}},grid:{display:false}}}}
+  });
+}
+
+// ---- CITY CHARTS ----
+function renderCityCharts(){
+  destroyChart('city');
+  charts.city=new Chart(document.getElementById('cityChart'),{
+    type:'bar',
+    data:{labels:cityData.map(c=>c.city),datasets:[{label:'Openings',data:cityData.map(c=>c.jobs),backgroundColor:'#378ADD',borderRadius:{topLeft:4,topRight:4},barThickness:30}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw.toLocaleString()+' openings'}}},scales:{x:{ticks:{font:{size:10}},grid:{display:false}},y:{ticks:{font:{size:10},callback:v=>(v/1000).toFixed(0)+'k'},grid:{color:'rgba(0,0,0,0.04)'}}}}
+  });
+
+  const sorted=[...cityData].sort((a,b)=>b.growth-a.growth);
+  const el=document.getElementById('cityBars');
+  el.innerHTML='';
+  sorted.forEach(c=>{
+    const col=c.growth>=20?'#1D9E75':'#5B5EA6';
+    el.innerHTML+=`<div class="bar-row">
+      <div class="bar-label">${c.city}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(c.growth/30*100).toFixed(0)}%;background:${col}"></div></div>
+      <div class="bar-val" style="color:${col}">↑${c.growth}%</div>
+    </div>`;
+  });
+}
+
+// ---- AI CHAT ----
+const chatHistory=[];
+async function sendChat(){
+  const inp=document.getElementById('chatInput');
+  const msg=inp.value.trim();
+  if(!msg) return;
+  inp.value='';
+  appendMsg(msg,'user');
+  chatHistory.push({role:'user',content:msg});
+  document.getElementById('sendBtn').disabled=true;
+  const typing=appendTyping();
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:1000,
+        system:`You are a knowledgeable IT career advisor specializing in the Indian job market. You have deep expertise in in-demand IT skills (AI/ML, Cloud, DevOps, Full Stack, Cybersecurity), salary trends across Indian cities, top hiring companies (TCS, Infosys, Wipro, Google, Microsoft, Amazon, startups), and career paths for freshers and experienced professionals. Give concise, practical, actionable advice tailored to the Indian IT ecosystem. Use specific numbers, city names, and company names where relevant. Keep responses under 200 words.`,
+        messages:chatHistory
+      })
+    });
+    const data=await res.json();
+    const reply=data.content?.find(b=>b.type==='text')?.text||'Sorry, I could not get a response.';
+    typing.remove();
+    appendMsg(reply,'ai');
+    chatHistory.push({role:'assistant',content:reply});
+  }catch(e){
+    typing.remove();
+    appendMsg('Network error. Please try again.','ai');
+  }
+  document.getElementById('sendBtn').disabled=false;
+}
+
+function appendMsg(text,role){
+  const div=document.createElement('div');
+  div.className='msg msg-'+role;
+  div.textContent=text;
+  document.getElementById('chatMsgs').appendChild(div);
+  div.scrollIntoView({behavior:'smooth'});
+  return div;
+}
+function appendTyping(){
+  const div=document.createElement('div');
+  div.className='typing';
+  div.innerHTML='<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+  document.getElementById('chatMsgs').appendChild(div);
+  div.scrollIntoView({behavior:'smooth'});
+  return div;
+}
+function useChip(el){
+  document.getElementById('chatInput').value=el.textContent;
+  document.getElementById('chatInput').focus();
+}
+</script>
+</body>
+</html>
